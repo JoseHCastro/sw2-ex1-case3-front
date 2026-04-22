@@ -178,43 +178,58 @@ const DeleteButton = styled.button`
 `;
 
 const getRelationStyle = (type) => {
+  // UML 2.5: todas las líneas son negras/gris oscuro por convención estándar
   const baseStyle = {
-    strokeWidth: 3,
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
+    strokeWidth: 2,
+    strokeLinecap: "butt",
+    strokeLinejoin: "miter",
+    stroke: "#1e293b",
   };
 
   switch (type) {
     case "Composición":
+      // UML 2.5: línea sólida + rombo RELLENO en el extremo origen ("todo")
       return {
         ...baseStyle,
-        stroke: "#2563EB",
         markerStart: "url(#compositionMarker)",
       };
     case "Agregación":
+      // UML 2.5: línea sólida + rombo HUECO en el extremo origen ("todo")
       return {
         ...baseStyle,
-        stroke: "#059669",
         markerStart: "url(#aggregationMarker)",
       };
     case "Generalización":
+      // UML 2.5: línea sólida + triángulo HUECO apuntando al padre (destino)
       return {
         ...baseStyle,
-        stroke: "#7C3AED",
         markerEnd: "url(#generalizationMarker)",
       };
-    case "Muchos a Muchos":
+    case "Realización":
+      // UML 2.5: línea DISCONTINUA + triángulo hueco apuntando a la interfaz
       return {
         ...baseStyle,
-        stroke: "#DB2777",
-        strokeDasharray: "6",
-        strokeWidth: 3,
+        strokeDasharray: "8 4",
+        markerEnd: "url(#generalizationMarker)",
+      };
+    case "Dependencia":
+      // UML 2.5: línea DISCONTINUA + flecha abierta
+      return {
+        ...baseStyle,
+        strokeDasharray: "6 3",
+        markerEnd: "url(#openArrowMarker)",
+      };
+    case "Muchos a Muchos":
+      // UML 2.5: asociación bidireccional, flechas abiertas en ambos extremos
+      return {
+        ...baseStyle,
+        markerStart: "url(#openArrowMarkerReverse)",
+        markerEnd: "url(#openArrowMarker)",
       };
     default:
+      // Asociación: línea sólida + flecha ABIERTA apuntando al destino
       return {
         ...baseStyle,
-        stroke: "#667eea",
-        strokeWidth: 3,
         markerEnd: "url(#associationMarker)",
       };
   }
@@ -646,71 +661,133 @@ const AssociationRelation = ({
       }}
     >
       <defs>
-        {/* Marcador de Asociación */}
+        {/*
+          =========================================================
+          MARCADORES UML 2.5 — Notación estándar para diagramas de clase
+          =========================================================
+        */}
+
+        {/* Asociación: flecha ABIERTA (open arrowhead) → apunta al destino */}
         <marker
           id="associationMarker"
-          markerWidth="20"
-          markerHeight="20"
-          refX="18"
-          refY="10"
+          markerWidth="12"
+          markerHeight="12"
+          refX="10"
+          refY="6"
           orient="auto-start-reverse"
           markerUnits="strokeWidth"
         >
-          <path d="M0,0 L0,20 L18,10 z" fill="#667eea" />
+          {/* Dos trazos abiertos formando una V — UML 2.5 open arrow */}
+          <path
+            d="M0,0 L10,6 L0,12"
+            fill="none"
+            stroke="#1e293b"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </marker>
 
-        {/* Marcador de Composición */}
+        {/* Flecha abierta invertida — para Muchos a Muchos en el extremo inicio */}
+        <marker
+          id="openArrowMarkerReverse"
+          markerWidth="12"
+          markerHeight="12"
+          refX="0"
+          refY="6"
+          orient="auto"
+          markerUnits="strokeWidth"
+        >
+          <path
+            d="M10,0 L0,6 L10,12"
+            fill="none"
+            stroke="#1e293b"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </marker>
+
+        {/* Flecha abierta estándar — para Dependencia/Realización */}
+        <marker
+          id="openArrowMarker"
+          markerWidth="12"
+          markerHeight="12"
+          refX="10"
+          refY="6"
+          orient="auto-start-reverse"
+          markerUnits="strokeWidth"
+        >
+          <path
+            d="M0,0 L10,6 L0,12"
+            fill="none"
+            stroke="#1e293b"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </marker>
+
+        {/* Composición: rombo RELLENO negro ◆ — se coloca en el extremo origen ("todo") */}
         <marker
           id="compositionMarker"
-          markerWidth="20"
-          markerHeight="20"
-          refX="10"
-          refY="10"
+          markerWidth="18"
+          markerHeight="12"
+          refX="16"
+          refY="6"
           orient="auto-start-reverse"
           markerUnits="strokeWidth"
         >
-          <path d="M0,10 L10,0 L20,10 L10,20 z" fill="#2563EB" />
+          {/* Rombo alargado horizontalmente, alineado sobre la línea */}
+          <path
+            d="M0,6 L8,0 L16,6 L8,12 Z"
+            fill="#1e293b"
+            stroke="#1e293b"
+            strokeWidth="1"
+          />
         </marker>
 
-        {/* Marcador de Agregación */}
+        {/* Agregación: rombo HUECO ◇ — se coloca en el extremo origen ("todo") */}
         <marker
           id="aggregationMarker"
-          markerWidth="20"
-          markerHeight="20"
-          refX="10"
-          refY="10"
+          markerWidth="18"
+          markerHeight="12"
+          refX="16"
+          refY="6"
           orient="auto-start-reverse"
           markerUnits="strokeWidth"
         >
           <path
-            d="M0,10 L10,0 L20,10 L10,20 z"
+            d="M0,6 L8,0 L16,6 L8,12 Z"
             fill="white"
-            stroke="#059669"
-            strokeWidth="2"
+            stroke="#1e293b"
+            strokeWidth="1.2"
           />
         </marker>
 
-        {/* Marcador de Generalización */}
+        {/* Generalización / Realización: triángulo HUECO △ — apunta al padre/interfaz (destino) */}
         <marker
           id="generalizationMarker"
-          markerWidth="20"
-          markerHeight="20"
-          refX="20"
-          refY="10"
+          markerWidth="14"
+          markerHeight="12"
+          refX="12"
+          refY="6"
           orient="auto-start-reverse"
           markerUnits="strokeWidth"
         >
+          {/* Triángulo isósceles con vértice apuntando al destino */}
           <path
-            d="M0,0 L0,20 L20,10 z"
+            d="M0,0 L12,6 L0,12 Z"
             fill="white"
-            stroke="#7C3AED"
-            strokeWidth="2"
+            stroke="#1e293b"
+            strokeWidth="1.2"
+            strokeLinejoin="miter"
           />
         </marker>
 
-        {/* Filtro de sombra */}
+        {/* Filtro de sombra sutil */}
         <filter id="shadowFilter" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.1" />
+          <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.08" />
         </filter>
       </defs>
 
