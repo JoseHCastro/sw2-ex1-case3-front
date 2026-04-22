@@ -4,76 +4,80 @@ import { Plus, Edit3, GripVertical, Settings } from "lucide-react";
 
 const ClassContainer = styled.div`
   position: absolute;
+  /* UML 2.5: rectángulo sin redondeos */
   background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  width: 300px;
+  border-radius: 0;
+  border: 1.5px solid #1e293b;
+  width: 220px;
   overflow: hidden;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-  border: 1px solid #e2e8f0;
-  transition: ${(props) => (props.$isDragging ? "none" : "all 0.2s ease")};
+  font-family: "Courier New", Courier, monospace;
+  transition: ${(props) => (props.$isDragging ? "none" : "box-shadow 0.15s ease")};
   left: ${(props) => props.x}px;
   top: ${(props) => props.y}px;
   z-index: ${(props) => (props.$isDragging ? 1000 : 10)};
   cursor: ${(props) => (props.$isDragging ? "grabbing" : "grab")};
   will-change: ${(props) => (props.$isDragging ? "transform" : "auto")};
+  box-shadow: none;
 
   &:hover {
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    border-color: #1e293b;
   }
 
   ${(props) =>
     props.$isSelected &&
     `
-    border-color: #10B981;
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
-    transform: scale(1.02);
+    border-color: #1e293b;
+    border-width: 2px;
+    box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.15);
   `}
 
   ${(props) =>
     props.$isDragging &&
     `
-    transform: scale(1.05) rotate(1deg);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
-    border-color: #667eea;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    opacity: 0.96;
   `}
 `;
 
 const ClassHeader = styled.div`
-  background: #f7fafc;
-  color: #2d3748;
-  padding: 16px;
+  /* UML 2.5: encabezado blanco con borde inferior que separa del cuerpo */
+  background: #ffffff;
+  color: #1e293b;
+  padding: 10px 32px 10px 32px;
   text-align: center;
   position: relative;
   cursor: move;
   user-select: none;
   -webkit-user-select: none;
-  border-radius: 6px 6px 0 0;
+  border-bottom: 1.5px solid #1e293b;
 
   h4 {
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 0.95rem;
     font-weight: 700;
-    letter-spacing: 0.5px;
-    color: #2d3748;
+    letter-spacing: 0;
+    color: #1e293b;
+    font-family: "Courier New", Courier, monospace;
+    /* Las clases en UML 2.5 llevan el nombre en negrita */
   }
 
   input {
     width: 90%;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.2rem;
-    font-weight: 600;
-    background: rgba(255, 255, 255, 0.9);
-    color: #1a202c;
+    padding: 4px 6px;
+    border: 1px solid #94a3b8;
+    border-radius: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+    background: #ffffff;
+    color: #1e293b;
     text-align: center;
+    font-family: "Courier New", Courier, monospace;
 
     &:focus {
       outline: none;
-      background: white;
-      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+      border-color: #1e293b;
+      box-shadow: none;
     }
   }
 `;
@@ -102,8 +106,9 @@ const DeleteButton = styled.button`
 `;
 
 const Section = styled.div`
-  padding: 16px;
-  border-bottom: 1px solid #cbd5e0;
+  padding: 8px 10px;
+  /* UML 2.5: secciones divididas por línea horizontal sólida */
+  border-bottom: 1px solid #1e293b;
   background: #ffffff;
 
   &:last-child {
@@ -112,19 +117,17 @@ const Section = styled.div`
 `;
 
 const SectionTitle = styled.h5`
-  margin: 0 0 12px 0;
-  color: #4a5568;
-  font-size: 0.9rem;
-  font-weight: 700;
+  /* UML 2.5: etiquetas de sección en minúsculas, discretas */
+  margin: 0 0 4px 0;
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.8px;
   display: flex;
   align-items: center;
-  gap: 8px;
-
-  i {
-    font-size: 12px;
-  }
+  gap: 4px;
+  font-family: "Courier New", Courier, monospace;
 `;
 
 const List = styled.ul`
@@ -136,30 +139,32 @@ const List = styled.ul`
 const ListItem = styled.li`
   display: flex;
   align-items: center;
-  margin-bottom: 8px;
-  padding: 8px 0;
+  margin-bottom: 2px;
+  padding: 2px 0;
   position: relative;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
+  border-radius: 0;
+  transition: background-color 0.1s ease;
 
   &:hover {
-    background: rgba(102, 126, 234, 0.1);
+    background: rgba(30, 41, 59, 0.04);
   }
 
   input {
     flex: 1;
-    padding: 8px 12px;
-    border: 1px solid #cbd5e0;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    background: #ffffff;
-    color: #2d3748;
-    transition: all 0.3s ease;
+    padding: 3px 6px;
+    border: 1px solid transparent;
+    border-radius: 0;
+    font-size: 0.82rem;
+    background: transparent;
+    color: #1e293b;
+    transition: border-color 0.15s ease;
+    font-family: "Courier New", Courier, monospace;
 
     &:focus {
       outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      border-color: #94a3b8;
+      background: #f8fafc;
+      box-shadow: none;
     }
 
     &::placeholder {
@@ -170,34 +175,32 @@ const ListItem = styled.li`
 `;
 
 const AddButton = styled.button`
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  /* Botón discreto, estilo UML técnico */
+  background: transparent;
+  color: #64748b;
+  border: 1px dashed #94a3b8;
+  border-radius: 0;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
   cursor: pointer;
-  margin-top: 12px;
+  margin-top: 6px;
   width: 100%;
-  transition: all 0.3s ease;
+  transition: all 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  gap: 4px;
+  font-family: "Courier New", Courier, monospace;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+    background: #f1f5f9;
+    border-color: #64748b;
+    color: #1e293b;
   }
 
   &:active {
-    transform: translateY(0);
-  }
-
-  i {
-    font-size: 14px;
+    background: #e2e8f0;
   }
 `;
 
@@ -226,27 +229,19 @@ const RemoveButton = styled.button`
 
 const DragHandle = styled.div`
   position: absolute;
-  top: 8px;
-  left: 8px;
-  width: 20px;
-  height: 20px;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 4px;
+  top: 6px;
+  left: 6px;
+  width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: grab;
-  opacity: 0.8;
-  transition: all 0.3s ease;
+  opacity: 0.3;
+  transition: opacity 0.2s ease;
 
   &:hover {
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.5);
-  }
-
-  i {
-    font-size: 10px;
-    color: #4a5568;
+    opacity: 0.7;
   }
 `;
 
