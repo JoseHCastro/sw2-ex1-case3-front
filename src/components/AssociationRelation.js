@@ -296,10 +296,11 @@ const AssociationRelation = ({
     onDelete(relation.id);
   };
 
-  // Calcular coordenadas de la línea - MEJORADO
+  // Calcular coordenadas estilo Enterprise Architect
+  // Conecta el punto medio del lado más apropiado de cada clase (puerto)
   const calculateLineCoordinates = () => {
-    const CLASS_WIDTH = 300;
-    const CLASS_HEIGHT = 150;
+    const CLASS_WIDTH = 220;
+    const CLASS_HEIGHT = 160;
 
     // Verificar que las clases tengan coordenadas válidas
     if (
@@ -317,149 +318,78 @@ const AssociationRelation = ({
       return { startX: 0, startY: 0, endX: 100, endY: 100 };
     }
 
-    const sourceCenter = {
-      x: sourceClass.x + CLASS_WIDTH / 2,
-      y: sourceClass.y + CLASS_HEIGHT / 2,
+    // Centros
+    const srcCX = sourceClass.x + CLASS_WIDTH / 2;
+    const srcCY = sourceClass.y + CLASS_HEIGHT / 2;
+    const tgtCX = targetClass.x + CLASS_WIDTH / 2;
+    const tgtCY = targetClass.y + CLASS_HEIGHT / 2;
+
+    const dx = tgtCX - srcCX;
+    const dy = tgtCY - srcCY;
+
+    // Puertos: punto medio de cada lado
+    const srcPorts = {
+      right:  { x: sourceClass.x + CLASS_WIDTH, y: srcCY },
+      left:   { x: sourceClass.x,               y: srcCY },
+      bottom: { x: srcCX, y: sourceClass.y + CLASS_HEIGHT },
+      top:    { x: srcCX, y: sourceClass.y },
     };
-    const targetCenter = {
-      x: targetClass.x + CLASS_WIDTH / 2,
-      y: targetClass.y + CLASS_HEIGHT / 2,
+    const tgtPorts = {
+      left:   { x: targetClass.x,               y: tgtCY },
+      right:  { x: targetClass.x + CLASS_WIDTH, y: tgtCY },
+      top:    { x: tgtCX, y: targetClass.y },
+      bottom: { x: tgtCX, y: targetClass.y + CLASS_HEIGHT },
     };
 
-    // Calcular dirección del vector desde origen hacia destino
-    const deltaX = targetCenter.x - sourceCenter.x;
-    const deltaY = targetCenter.y - sourceCenter.y;
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-    if (distance === 0) {
-      return {
-        startX: sourceCenter.x,
-        startY: sourceCenter.y,
-        endX: targetCenter.x,
-        endY: targetCenter.y,
-      };
+    // Elegir lados según dirección relativa (igual que EA)
+    let startSide, endSide;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      startSide = dx >= 0 ? "right"  : "left";
+      endSide   = dx >= 0 ? "left"   : "right";
+    } else {
+      startSide = dy >= 0 ? "bottom" : "top";
+      endSide   = dy >= 0 ? "top"    : "bottom";
     }
 
-    // Normalizar el vector
-    const nx = deltaX / distance;
-    const ny = deltaY / distance;
-
-    // Función para encontrar el punto de intersección EXACTO con el borde de un rectángulo
-    const findIntersectionPoint = (
-      centerX,
-      centerY,
-      dirX,
-      dirY,
-      width,
-      height
-    ) => {
-      // Calcular las coordenadas exactas de los bordes del rectángulo
-      const leftEdge = centerX - width / 2;
-      const rightEdge = centerX + width / 2;
-      const topEdge = centerY - height / 2;
-      const bottomEdge = centerY + height / 2;
-
-      // Calcular intersecciones con cada borde
-      const intersections = [];
-
-      // Borde izquierdo (x = leftEdge)
-      if (dirX !== 0) {
-        const tLeft = (leftEdge - centerX) / dirX;
-        if (tLeft > 0) {
-          const y = centerY + dirY * tLeft;
-          if (y >= topEdge && y <= bottomEdge) {
-            intersections.push({ x: leftEdge, y, t: tLeft });
-          }
-        }
-      }
-
-      // Borde derecho (x = rightEdge)
-      if (dirX !== 0) {
-        const tRight = (rightEdge - centerX) / dirX;
-        if (tRight > 0) {
-          const y = centerY + dirY * tRight;
-          if (y >= topEdge && y <= bottomEdge) {
-            intersections.push({ x: rightEdge, y, t: tRight });
-          }
-        }
-      }
-
-      // Borde superior (y = topEdge)
-      if (dirY !== 0) {
-        const tTop = (topEdge - centerY) / dirY;
-        if (tTop > 0) {
-          const x = centerX + dirX * tTop;
-          if (x >= leftEdge && x <= rightEdge) {
-            intersections.push({ x, y: topEdge, t: tTop });
-          }
-        }
-      }
-
-      // Borde inferior (y = bottomEdge)
-      if (dirY !== 0) {
-        const tBottom = (bottomEdge - centerY) / dirY;
-        if (tBottom > 0) {
-          const x = centerX + dirX * tBottom;
-          if (x >= leftEdge && x <= rightEdge) {
-            intersections.push({ x, y: bottomEdge, t: tBottom });
-          }
-        }
-      }
-
-      // Retornar la intersección más cercana (menor t)
-      if (intersections.length > 0) {
-        const closest = intersections.reduce((min, current) =>
-          current.t < min.t ? current : min
-        );
-        // Asegurar que el punto esté EXACTAMENTE en el borde (redondear para evitar errores de punto flotante)
-        return {
-          x: Math.round(closest.x * 100) / 100,
-          y: Math.round(closest.y * 100) / 100,
-        };
-      }
-
-      // Fallback - si no hay intersección, usar el borde más cercano
-      // Esto no debería pasar, pero por seguridad
-      if (Math.abs(dirX) > Math.abs(dirY)) {
-        return { x: dirX > 0 ? rightEdge : leftEdge, y: centerY };
-      } else {
-        return { x: centerX, y: dirY > 0 ? bottomEdge : topEdge };
-      }
-    };
-
-    // Encontrar punto de salida en la clase origen
-    const startPoint = findIntersectionPoint(
-      sourceCenter.x,
-      sourceCenter.y,
-      nx,
-      ny,
-      CLASS_WIDTH,
-      CLASS_HEIGHT
-    );
-
-    // Encontrar punto de entrada en la clase destino
-    const endPoint = findIntersectionPoint(
-      targetCenter.x,
-      targetCenter.y,
-      -nx,
-      -ny,
-      CLASS_WIDTH,
-      CLASS_HEIGHT
-    );
+    const start = srcPorts[startSide];
+    const end   = tgtPorts[endSide];
 
     return {
-      startX: startPoint.x,
-      startY: startPoint.y,
-      endX: endPoint.x,
-      endY: endPoint.y,
+      startX: start.x, startY: start.y,
+      endX: end.x,     endY: end.y,
+      startSide, endSide,
     };
   };
 
-  const { startX, startY, endX, endY } = calculateLineCoordinates();
+  const { startX, startY, endX, endY, startSide } = calculateLineCoordinates();
 
-  // Función para generar línea ortogonal inteligente que evita cruces
-  // IMPORTANTE: startX/startY y endX/endY ya están en los bordes exactos de las clases
-  const generateOrthogonalPath = (startX, startY, endX, endY) => {
+  // Routing ortogonal estilo Enterprise Architect
+  // Genera un path en Z con 3 segmentos rectos (máximo 2 codos a 90°)
+  // El codo se coloca en el punto medio entre los dos puertos
+  const generateOrthogonalPath = (sx, sy, ex, ey, srcSide) => {
+    const isHorizontal = srcSide === "right" || srcSide === "left";
+
+    if (isHorizontal) {
+      // Salida/entrada horizontal → Z horizontal
+      if (Math.abs(sy - ey) < 2) {
+        // Mismo Y → línea recta
+        return `M ${sx} ${sy} L ${ex} ${ey}`;
+      }
+      const midX = Math.round((sx + ex) / 2);
+      return `M ${sx} ${sy} L ${midX} ${sy} L ${midX} ${ey} L ${ex} ${ey}`;
+    } else {
+      // Salida/entrada vertical → Z vertical
+      if (Math.abs(sx - ex) < 2) {
+        // Mismo X → línea recta
+        return `M ${sx} ${sy} L ${ex} ${ey}`;
+      }
+      const midY = Math.round((sy + ey) / 2);
+      return `M ${sx} ${sy} L ${sx} ${midY} L ${ex} ${midY} L ${ex} ${ey}`;
+    }
+  };
+
+  // ── placeholder to remove old function body ──
+  const _unused = (startX2, startY2, endX2, endY2) => {
     const CLASS_WIDTH = 300;
     const CLASS_HEIGHT = 150;
     const ROUTE_OFFSET = 30; // Offset mínimo desde el borde para routing ortogonal
@@ -646,6 +576,7 @@ const AssociationRelation = ({
               L ${endX} ${endY}`;
     }
   };
+  void _unused;
 
   return (
     <svg
@@ -798,7 +729,7 @@ const AssociationRelation = ({
         $isSelected={isSelected}
       >
         <RelationPath
-          d={generateOrthogonalPath(startX, startY, endX, endY)}
+          d={generateOrthogonalPath(startX, startY, endX, endY, startSide)}
           fill="none"
           {...getRelationStyle(relation.type)}
           filter="url(#shadowFilter)"

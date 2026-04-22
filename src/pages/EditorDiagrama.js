@@ -1008,135 +1008,105 @@ const EditorDiagrama = () => {
   const autoOrganizeClasses = useCallback(() => {
     if (classes.length === 0) return;
 
-    const CLASS_WIDTH = 300;
-    const CLASS_HEIGHT = 150;
-    const MIN_SPACING = 350;
-    const GRID_SIZE = 100;
+    const CLASS_WIDTH = 220;    // ancho real del componente ClassComponent
+    const CLASS_HEIGHT = 160;   // altura estimada (header + secciones)
+    const PAD_X = 120;          // espacio horizontal entre clases
+    const PAD_Y = 140;          // espacio vertical entre filas
+    const GROUP_GAP_Y = 200;    // separación extra entre grupos distintos
+    const MAX_COLS = 4;         // máximo columnas por grupo
+    const ORIGIN_X = 150;
+    const ORIGIN_Y = 150;
 
-    // Agrupar clases por relaciones
-    const relatedGroups = new Map();
-    const classGroups = new Map();
-    let groupId = 0;
+    // ── 1. Union-Find: agrupar clases conectadas ──────────────────────────
+    const parent = new Map();
+    classes.forEach((cls) => parent.set(cls.id, cls.id));
+
+    const find = (id) => {
+      if (parent.get(id) !== id) parent.set(id, find(parent.get(id)));
+      return parent.get(id);
+    };
+    const union = (a, b) => parent.set(find(a), find(b));
 
     relations.forEach((rel) => {
-      const sourceId = rel.source;
-      const targetId = rel.target;
-
-      const sourceGroup = classGroups.get(sourceId);
-      const targetGroup = classGroups.get(targetId);
-
-      if (!sourceGroup && !targetGroup) {
-        classGroups.set(sourceId, groupId);
-        classGroups.set(targetId, groupId);
-        relatedGroups.set(groupId, [sourceId, targetId]);
-        groupId++;
-      } else if (sourceGroup && !targetGroup) {
-        classGroups.set(targetId, sourceGroup);
-        relatedGroups.get(sourceGroup).push(targetId);
-      } else if (!sourceGroup && targetGroup) {
-        classGroups.set(sourceId, targetGroup);
-        relatedGroups.get(targetGroup).push(sourceId);
-      } else if (sourceGroup !== targetGroup) {
-        const targetGroupClasses = relatedGroups.get(targetGroup);
-        targetGroupClasses.forEach((clsId) => {
-          classGroups.set(clsId, sourceGroup);
-        });
-        relatedGroups.get(sourceGroup).push(...targetGroupClasses);
-        relatedGroups.delete(targetGroup);
+      if (parent.has(rel.source) && parent.has(rel.target)) {
+        union(rel.source, rel.target);
       }
     });
 
-    // Clases solas van a su propio grupo
+    // Agrupar IDs por raíz
+    const groupsMap = new Map();
     classes.forEach((cls) => {
-      if (!classGroups.has(cls.id)) {
-        classGroups.set(cls.id, groupId);
-        relatedGroups.set(groupId, [cls.id]);
-        groupId++;
-      }
+      const root = find(cls.id);
+      if (!groupsMap.has(root)) groupsMap.set(root, []);
+      groupsMap.get(root).push(cls.id);
     });
 
-    const updatedClasses = [...classes];
+    // Ordenar: grupos grandes primero
+    const sortedGroups = Array.from(groupsMap.values()).sort(
+      (a, b) => b.length - a.length
+    );
 
-    const startX = 200;
-    const startY = 200;
+    // ── 2. Asignar posiciones en grilla limpia ───────────────────────────
+    const positionMap = new Map();
+    let cursorY = ORIGIN_Y;
 
-    // Distribuir grupos
-    const groupsArray = Array.from(relatedGroups.entries());
-    const cols = Math.ceil(Math.sqrt(groupsArray.length));
+    sortedGroups.forEach((groupClassIds) => {
+      const cols = Math.min(groupClassIds.length, MAX_COLS);
+      const rows = Math.ceil(groupClassIds.length / cols);
 
-    groupsArray.forEach(([groupId, classIds], index) => {
-      const row = Math.floor(index / cols);
-      const col = index % cols;
-
-      const groupX = startX + col * (CLASS_WIDTH + MIN_SPACING);
-      const groupY = startY + row * (CLASS_HEIGHT + MIN_SPACING);
-
-      // Distribuir clases del grupo en layout circular compacto
-      const groupSize = classIds.length;
-      const radius = Math.max(80, (groupSize * 40) / (2 * Math.PI));
-
-      classIds.forEach((classId, idx) => {
-        const classIndex = updatedClasses.findIndex((c) => c.id === classId);
-        if (classIndex === -1) return;
-
-        if (groupSize === 1) {
-          // Una sola clase - posición central
-          updatedClasses[classIndex] = {
-            ...updatedClasses[classIndex],
-            x: Math.round(groupX / GRID_SIZE) * GRID_SIZE,
-            y: Math.round(groupY / GRID_SIZE) * GRID_SIZE,
-          };
-        } else {
-          // Múltiples clases - layout circular
-          const angle = (idx / groupSize) * 2 * Math.PI;
-          const offsetX = Math.cos(angle) * radius;
-          const offsetY = Math.sin(angle) * radius;
-
-          updatedClasses[classIndex] = {
-            ...updatedClasses[classIndex],
-            x: Math.round((groupX + offsetX) / GRID_SIZE) * GRID_SIZE,
-            y: Math.round((groupY + offsetY) / GRID_SIZE) * GRID_SIZE,
-          };
-        }
-      });
-    });
-
-    // Verificar y corregir solapamientos finales
-    updatedClasses.forEach((cls, i) => {
-      let attempts = 0;
-      while (attempts < 10) {
-        const hasOverlap = updatedClasses.some((other, j) => {
-          if (i === j) return false;
-          const dx = Math.abs(cls.x - other.x);
-          const dy = Math.abs(cls.y - other.y);
-          return dx < CLASS_WIDTH + 50 && dy < CLASS_HEIGHT + 50;
+      groupClassIds.forEach((classId, idx) => {
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+        positionMap.set(classId, {
+          x: ORIGIN_X + col * (CLASS_WIDTH + PAD_X),
+          y: cursorY + row * (CLASS_HEIGHT + PAD_Y),
         });
+      });
 
-        if (!hasOverlap) break;
-
-        // Desplazar ligeramente
-        cls.x += (attempts % 2 === 0 ? 1 : -1) * MIN_SPACING;
-        cls.y += (attempts % 3 === 0 ? 1 : -1) * MIN_SPACING;
-        attempts++;
-      }
-
-      // Aplicar snap-to-grid
-      cls.x = Math.round(cls.x / GRID_SIZE) * GRID_SIZE;
-      cls.y = Math.round(cls.y / GRID_SIZE) * GRID_SIZE;
+      cursorY += rows * (CLASS_HEIGHT + PAD_Y) + GROUP_GAP_Y;
     });
 
-    // Actualizar todas las clases
-    updatedClasses.forEach((updatedClass) => {
-      handleClassUpdate(updatedClass.id, {
-        x: updatedClass.x,
-        y: updatedClass.y,
+    // ── 3. Resolver solapamientos residuales ─────────────────────────────
+    const posArray = Array.from(positionMap.entries());
+    let changed = true;
+    let pass = 0;
+
+    while (changed && pass < 30) {
+      changed = false;
+      pass++;
+      for (let i = 0; i < posArray.length; i++) {
+        for (let j = i + 1; j < posArray.length; j++) {
+          const a = posArray[i][1];
+          const b = posArray[j][1];
+          const gapX = CLASS_WIDTH + PAD_X;
+          const gapY = CLASS_HEIGHT + PAD_Y;
+          const overlapX = gapX - Math.abs(a.x - b.x);
+          const overlapY = gapY - Math.abs(a.y - b.y);
+          if (overlapX > 0 && overlapY > 0) {
+            if (overlapX <= overlapY) {
+              const shift = Math.ceil(overlapX / 2) + 1;
+              if (a.x <= b.x) { a.x -= shift; b.x += shift; }
+              else { a.x += shift; b.x -= shift; }
+            } else {
+              const shift = Math.ceil(overlapY / 2) + 1;
+              if (a.y <= b.y) { a.y -= shift; b.y += shift; }
+              else { a.y += shift; b.y -= shift; }
+            }
+            changed = true;
+          }
+        }
+      }
+    }
+
+    // ── 4. Aplicar posiciones con snap a grid de 10px ────────────────────
+    posArray.forEach(([classId, pos]) => {
+      handleClassUpdate(classId, {
+        x: Math.max(0, Math.round(pos.x / 10) * 10),
+        y: Math.max(0, Math.round(pos.y / 10) * 10),
       });
     });
 
-    // Esperar un momento y luego ajustar vista
-    setTimeout(() => {
-      fitToBounds();
-    }, 300);
+    setTimeout(() => { fitToBounds(); }, 300);
   }, [classes, relations, handleClassUpdate, fitToBounds]);
 
   const handleClassDelete = (classId) => {
