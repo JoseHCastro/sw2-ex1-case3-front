@@ -167,6 +167,10 @@ const DeleteButton = styled.button`
   min-height: 32px;
   opacity: 0;
 
+  ${RelationGroup}:hover & {
+    opacity: 1;
+  }
+
   &:hover {
     background: #e2e8f0;
     transform: translateY(-2px) scale(1.1);
@@ -307,7 +311,18 @@ const AssociationRelation = ({
   // Conecta el punto medio del lado más apropiado de cada clase (puerto)
   const calculateLineCoordinates = () => {
     const CLASS_WIDTH = 220;
-    const CLASS_HEIGHT = 160;
+    
+    // Función para estimar la altura real de la clase según su contenido
+    const getEstimatedHeight = (cls) => {
+      let h = 42; // Header
+      // Atributos: padding(16) + addBtn(32) + items(25 c/u)
+      const attrsCount = cls.attributes ? cls.attributes.length : 0;
+      h += 48 + (attrsCount * 25);
+      // Métodos: padding(16) + addBtn(32) + items(25 c/u)
+      const methodsCount = cls.methods ? cls.methods.length : 0;
+      h += 48 + (methodsCount * 25);
+      return h;
+    };
 
     // Verificar que las clases tengan coordenadas válidas
     if (
@@ -325,11 +340,14 @@ const AssociationRelation = ({
       return { startX: 0, startY: 0, endX: 100, endY: 100 };
     }
 
+    const srcHeight = getEstimatedHeight(sourceClass);
+    const tgtHeight = getEstimatedHeight(targetClass);
+
     // Centros
     const srcCX = sourceClass.x + CLASS_WIDTH / 2;
-    const srcCY = sourceClass.y + CLASS_HEIGHT / 2;
+    const srcCY = sourceClass.y + srcHeight / 2;
     const tgtCX = targetClass.x + CLASS_WIDTH / 2;
-    const tgtCY = targetClass.y + CLASS_HEIGHT / 2;
+    const tgtCY = targetClass.y + tgtHeight / 2;
 
     const dx = tgtCX - srcCX;
     const dy = tgtCY - srcCY;
@@ -338,14 +356,14 @@ const AssociationRelation = ({
     const srcPorts = {
       right:  { x: sourceClass.x + CLASS_WIDTH, y: srcCY },
       left:   { x: sourceClass.x,               y: srcCY },
-      bottom: { x: srcCX, y: sourceClass.y + CLASS_HEIGHT },
+      bottom: { x: srcCX, y: sourceClass.y + srcHeight },
       top:    { x: srcCX, y: sourceClass.y },
     };
     const tgtPorts = {
       left:   { x: targetClass.x,               y: tgtCY },
       right:  { x: targetClass.x + CLASS_WIDTH, y: tgtCY },
       top:    { x: tgtCX, y: targetClass.y },
-      bottom: { x: tgtCX, y: targetClass.y + CLASS_HEIGHT },
+      bottom: { x: tgtCX, y: targetClass.y + tgtHeight },
     };
 
     // Elegir lados según dirección relativa (igual que EA)
@@ -743,44 +761,7 @@ const AssociationRelation = ({
           className="relation-path"
         />
 
-        {/* Nombre de la relación - posicionamiento mejorado */}
-        {(() => {
-          // Calcular posición óptima para la etiqueta
-          const midX = (startX + endX) / 2;
-          const midY = (startY + endY) / 2;
-          const dx = endX - startX;
-          const dy = endY - startY;
-
-          // Offset para evitar solapamiento con la línea
-          const labelOffset = 25;
-          let labelX = midX;
-          let labelY = midY;
-
-          // Si la línea es principalmente horizontal, desplazar verticalmente
-          if (Math.abs(dx) > Math.abs(dy)) {
-            labelY -= labelOffset * (dy > 0 ? 1 : -1);
-          } else {
-            // Si es principalmente vertical, desplazar horizontalmente
-            labelX += labelOffset * (dx > 0 ? -1 : 1);
-          }
-
-          return (
-            <g transform={`translate(${labelX}, ${labelY})`}>
-              {/* Fondo semi-transparente para mejor legibilidad */}
-              <rect
-                x="-50"
-                y="-12"
-                width="100"
-                height="24"
-                fill="rgba(255, 255, 255, 0.9)"
-                rx="4"
-                stroke="#e2e8f0"
-                strokeWidth="1"
-              />
-              <RelationText>{relation.type}</RelationText>
-            </g>
-          );
-        })()}
+        {/* Nombre de la relación removido a petición (UML 2.5 no lo requiere siempre) */}
 
         {/* Panel de control */}
         {showControls && (
