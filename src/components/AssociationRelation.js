@@ -227,10 +227,9 @@ const getRelationStyle = (type) => {
         markerEnd: "url(#openArrowMarker)",
       };
     default:
-      // Asociación: línea sólida + flecha ABIERTA apuntando al destino
+      // Asociación: línea sólida conectando ambas clases (sin flecha)
       return {
         ...baseStyle,
-        markerEnd: "url(#associationMarker)",
       };
   }
 };

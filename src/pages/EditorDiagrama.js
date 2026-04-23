@@ -1179,7 +1179,7 @@ const EditorDiagrama = () => {
       name: "Nueva Clase",
       x: newX,
       y: newY,
-      attributes: [`id_${newId} (PK)`],
+      attributes: [`id_${newId}`],
       methods: [],
     };
 
@@ -1761,8 +1761,8 @@ const EditorDiagrama = () => {
       x: (sourceClass.x + targetClass.x) / 2,
       y: (sourceClass.y + targetClass.y) / 2 - 50,
       attributes: [
-        `${sourceClass.name.toLowerCase()}_id (FK)`,
-        `${targetClass.name.toLowerCase()}_id (FK)`,
+        `${sourceClass.name.toLowerCase()}_id`,
+        `${targetClass.name.toLowerCase()}_id`,
       ],
       methods: [],
     };
