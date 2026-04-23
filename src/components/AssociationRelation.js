@@ -72,11 +72,12 @@ const ControlButton = styled.button.attrs((props) => ({
 }))`
   background: ${(props) =>
     props.$variant === "danger"
-      ? "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)"
+      ? "#f1f5f9"
       : props.$variant === "warning"
         ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)"
         : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"};
-  color: white;
+  color: ${(props) => (props.$variant === "danger" ? "#64748b" : "white")};
+  opacity: ${(props) => (props.$variant === "danger" ? 0 : 1)};
   border: none;
   border-radius: 10px;
   padding: 10px 16px;
@@ -87,12 +88,16 @@ const ControlButton = styled.button.attrs((props) => ({
   align-items: center;
   gap: 8px;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: ${(props) =>
+    props.$variant === "danger" ? "none" : "0 4px 12px rgba(0, 0, 0, 0.15)"};
   white-space: nowrap;
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    opacity: 1;
+    background: ${(props) =>
+      props.$variant === "danger" ? "#e2e8f0" : undefined};
   }
 
   &:active {
@@ -143,8 +148,8 @@ const RelationInput = styled.foreignObject`
 `;
 
 const DeleteButton = styled.button`
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
+  background: #f1f5f9;
+  color: #64748b;
   border: none;
   border-radius: 50%;
   padding: 8px;
@@ -155,16 +160,19 @@ const DeleteButton = styled.button`
   font-size: 12px;
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  box-shadow: none;
   width: 32px;
   height: 32px;
   min-width: 32px;
   min-height: 32px;
+  opacity: 0;
 
   &:hover {
-    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    background: #e2e8f0;
     transform: translateY(-2px) scale(1.1);
-    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    opacity: 1;
+    color: #475569;
   }
 
   &:active {
