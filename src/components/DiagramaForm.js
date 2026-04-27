@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import styled from "styled-components";
+import API_CONFIG from "../services/apiConfig";
 
 const FormContainer = styled.div`
   display: flex;
@@ -128,7 +129,7 @@ const DiagramaForm = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:3001/api/diagramas/${id}`,
+        API_CONFIG.getUrl(`/api/diagramas/${id}`),
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -170,12 +171,12 @@ const DiagramaForm = () => {
       };
 
       if (isEditing) {
-        await axios.put(`http://localhost:3001/api/diagramas/${id}`, data, {
+        await axios.put(API_CONFIG.getUrl(`/api/diagramas/${id}`), data, {
           headers: { Authorization: `Bearer ${token}` },
         });
       } else {
         const response = await axios.post(
-          "http://localhost:3001/api/diagramas",
+          API_CONFIG.getUrl("/api/diagramas"),
           data,
           {
             headers: { Authorization: `Bearer ${token}` },
